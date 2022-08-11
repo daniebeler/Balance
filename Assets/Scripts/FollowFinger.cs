@@ -10,7 +10,7 @@ public class FollowFinger : MonoBehaviour
 
     private Vector3 playerpos;
 
-    private bool canDrag = true;
+    private bool canDrag = false;
 
     void Start()
     {
@@ -20,38 +20,39 @@ public class FollowFinger : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (Input.GetMouseButtonDown(0) && mouseIsOverButton(Input.mousePosition)) {
-            canDrag = false;
+        if (Input.GetMouseButtonDown(0)) {
+            if (!mouseIsOverButton(Input.mousePosition)) {
+                canDrag = true;
+            }
         }
         else if (Input.GetMouseButtonUp(0)) {
-            canDrag = true;
+            canDrag = false;
         }
 
         if (Input.touchCount > 0) {
             if (Input.GetTouch(0).phase == TouchPhase.Began) {
-                if (mouseIsOverButton(Input.GetTouch(0).position)) {
-                    canDrag = false;
+                if (!mouseIsOverButton(Input.GetTouch(0).position)) {
+                    canDrag = true;
                 }
             }
         }
 
-        
-
-        if (Input.touchCount > 0 && canDrag)
-        {
-            playerpos = new Vector3(Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position).x, Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position).y, 0);
-        }
-        else if (Input.GetMouseButton(0) && canDrag)
-        {
-            playerpos = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y, 0);
-        }
-
         if (Input.touchCount > 0) {
             if (Input.GetTouch(0).phase == TouchPhase.Ended) {
-                canDrag = true;
+                canDrag = false;
             }
         }
 
+        if (canDrag) {
+            if (Input.touchCount > 0)
+            {
+                playerpos = new Vector3(Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position).x, Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position).y, 0);
+            }
+            else if (Input.GetMouseButton(0))
+            {
+                playerpos = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y, 0);
+            }
+        }
 
         transform.position = playerpos;
     }
