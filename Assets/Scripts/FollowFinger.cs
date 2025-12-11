@@ -1,15 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+// New Input System namespace
+using UnityEngine.InputSystem;
+
 public class FollowFinger : MonoBehaviour
 {
     private Rigidbody2D rigid;
-
     private Vector3 playerpos;
-
     private bool canDrag = false;
 
     void Start()
@@ -20,57 +20,52 @@ public class FollowFinger : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (Input.GetMouseButtonDown(0)) {
-            if (!mouseIsOverButton(Input.mousePosition)) {
+        // -----------------------------
+        // Pointer Down (mouse or touch)
+        // -----------------------------
+        if (Pointer.current != null && Pointer.current.press.wasPressedThisFrame)
+        {
+            Vector2 screenPos = Pointer.current.position.ReadValue();
+            if (!PointerIsOverUIButton(screenPos))
                 canDrag = true;
-            }
         }
-        else if (Input.GetMouseButtonUp(0)) {
+
+        // -----------------------------
+        // Pointer Up
+        // -----------------------------
+        if (Pointer.current != null && Pointer.current.press.wasReleasedThisFrame)
+        {
             canDrag = false;
         }
 
-        if (Input.touchCount > 0) {
-            if (Input.GetTouch(0).phase == TouchPhase.Began) {
-                if (!mouseIsOverButton(Input.GetTouch(0).position)) {
-                    canDrag = true;
-                }
-            }
-        }
-
-        if (Input.touchCount > 0) {
-            if (Input.GetTouch(0).phase == TouchPhase.Ended) {
-                canDrag = false;
-            }
-        }
-
-        if (canDrag) {
-            if (Input.touchCount > 0)
-            {
-                playerpos = new Vector3(Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position).x, Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position).y, 0);
-            }
-            else if (Input.GetMouseButton(0))
-            {
-                playerpos = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y, 0);
-            }
+        // -----------------------------
+        // Drag movement
+        // -----------------------------
+        if (canDrag && Pointer.current != null && Pointer.current.press.isPressed)
+        {
+            Vector2 screenPos = Pointer.current.position.ReadValue();
+            Vector3 world = Camera.main.ScreenToWorldPoint(screenPos);
+            playerpos = new Vector3(world.x, world.y, 0);
         }
 
         transform.position = playerpos;
     }
 
-    private bool mouseIsOverButton(Vector3 position)
+    // Replaces your old mouseIsOverButton()
+    private bool PointerIsOverUIButton(Vector2 screenPosition)
     {
-        PointerEventData pointerEventData = new PointerEventData(EventSystem.current);
-        pointerEventData.position = position;
+        PointerEventData eventData = new PointerEventData(EventSystem.current);
+        eventData.position = screenPosition;
 
-        List<RaycastResult> raycastResultList = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(pointerEventData, raycastResultList);
-        for (int i = 0; i < raycastResultList.Count; i++) {
-            if (raycastResultList[i].gameObject.GetComponent<Button>() == null) {
-                raycastResultList.RemoveAt(i);
-                i--;
-            }
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, results);
+
+        foreach (var r in results)
+        {
+            if (r.gameObject.GetComponent<Button>() != null)
+                return true;
         }
 
-        return raycastResultList.Count > 0;
+        return false;
     }
 }
